@@ -1,0 +1,19 @@
+{
+  "name": "@pesifar/xiaozhi-creator-skill",
+  "version": "1.0.0",
+  "description": "Xiaozhi skill package with six API workflows.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pesifar/xiaozhi-creator-skill.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "examples/",
+    "references/"
+  ]
+}
