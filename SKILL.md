@@ -52,4 +52,6 @@ Create xiaozhi.me agents by filling a template JSON and calling a local Python s
 ## Additional resources
 
 - For API field details and integration notes, read `references/主要接口_ai适配.md`.
+- 中文说明：详细字段解释、请求示例与注意事项见 `references/主要接口_ai适配.md`。
+- English note: for field definitions, request examples, and integration caveats, see `references/主要接口_ai适配.md`.
 
