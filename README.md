@@ -1,50 +1,37 @@
-# xiaozhi-agent-creator-skill
+# xiaozhi-creator-skill
 
-将小智智能体创建流程封装为可安装的 skill（基于 `create_agent.py` + JSON 模版）。
+将小智 API 的 6 个核心能力封装为可安装 skill：创建智能体、更新智能体、模型列表、智能体列表、设备列表、添加设备。
 
 ## 安装
 
 ```bash
-npx skills add Pesifar/xiaozhi-agent-creator-skill
+npx skills add Pesifar/xiaozhi-creator-skill
 ```
 
 例如（示例）：
 
 ```bash
-npx skills add Pesifar/xiaozhi-agent-creator-skill
+npx skills add Pesifar/xiaozhi-creator-skill
 ```
 
-## 使用方式
+## 能力范围
 
-1. 从模版复制配置文件：
-   - `templates/agent_profile.template.json` -> `my_agent.json`
-2. 编辑 `my_agent.json`：
-   - `authorization.token`
-   - `agent.agent_name`
-   - `agent.assistant_name`
-   - `agent.character`
-3. 本地执行：
-
-```bash
-python scripts/create_agent.py --config my_agent.json --dry-run
-python scripts/create_agent.py --config my_agent.json
-python scripts/create_agent.py --config my_agent.json --sync-config
-```
+1. 创建智能体：`POST /api/agents`
+2. 更新智能体：`POST /api/agents/<agent_id>/config`
+3. 模型列表：`GET /api/roles/model-list`
+4. 智能体列表：`GET /api/agents`
+5. 设备列表：`GET /api/developers/devices`
+6. 添加设备：`POST /api/agents/<agent_id>/devices`
 
 ## 文件结构
 
 ```text
-xiaozhi-agent-creator-skill/
+xiaozhi-creator-skill/
 ├── SKILL.md
 ├── README.md
-├── create_agent.py
 ├── references/
-│   ├── 主要接口_ai适配.docx
 │   └── 主要接口_ai适配.md
-├── scripts/
-│   └── create_agent.py
-└── templates/
-    └── agent_profile.template.json
+└── .gitignore
 ```
 
 ## 致谢参考
