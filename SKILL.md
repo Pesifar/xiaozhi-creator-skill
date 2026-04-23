@@ -119,4 +119,5 @@ Use this concise result format:
 ## Additional resource
 
 - API details source: `references/主要接口_ai适配.md`
+- Example dialogs: `examples/demo-conversation.md`
 

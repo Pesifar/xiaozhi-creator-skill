@@ -29,6 +29,8 @@ npx skills add Pesifar/xiaozhi-creator-skill
 xiaozhi-creator-skill/
 ├── SKILL.md
 ├── README.md
+├── examples/
+│   └── demo-conversation.md
 ├── references/
 │   └── 主要接口_ai适配.md
 └── .gitignore
