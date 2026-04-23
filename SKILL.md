@@ -1,6 +1,10 @@
 ---
 name: xiaozhi-creator
-description: Manage xiaozhi.me agents and devices through six API workflows: create agent, update agent config, list models, list agents, list devices, and add device. Use when the user requests xiaozhi API operations, agent lifecycle management, or device binding.
+description: >-
+  Manage xiaozhi.me agents and devices through six API workflows: create agent,
+  update agent config, list models, list agents, list devices, and add device.
+  Use when the user requests xiaozhi API operations, agent lifecycle
+  management, or device binding.
 ---
 
 # Xiaozhi Creator
