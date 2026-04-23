@@ -1,0 +1,21 @@
+{
+  "name": "@pesifar/xiaozhi-agent-creator-skill",
+  "version": "1.0.0",
+  "description": "Skill package for creating xiaozhi.me agents from JSON templates.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pesifar/xiaozhi-agent-creator-skill.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "create_agent.py",
+    "scripts/",
+    "templates/",
+    "references/"
+  ]
+}
