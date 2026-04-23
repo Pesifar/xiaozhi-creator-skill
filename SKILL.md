@@ -49,3 +49,7 @@ Create xiaozhi.me agents by filling a template JSON and calling a local Python s
 - On success, show returned JSON and the console config URL.
 - On failure, show concise actionable error guidance.
 
+## Additional resources
+
+- For API field details and integration notes, read `references/主要接口_ai适配.md`.
+
