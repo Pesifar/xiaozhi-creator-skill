@@ -2,7 +2,7 @@
 
 将小智智能体创建流程封装为可安装的 skill（基于 `create_agent.py` + JSON 模版）。
 
-## 安装（发布到 GitHub 后）
+## 安装
 
 ```bash
 npx skills add Pesifar/xiaozhi-agent-creator-skill
