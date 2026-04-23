@@ -38,6 +38,9 @@ xiaozhi-agent-creator-skill/
 ├── SKILL.md
 ├── README.md
 ├── create_agent.py
+├── references/
+│   ├── 主要接口_ai适配.docx
+│   └── 主要接口_ai适配.md
 ├── scripts/
 │   └── create_agent.py
 └── templates/
