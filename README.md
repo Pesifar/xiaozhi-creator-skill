@@ -47,14 +47,6 @@ xiaozhi-agent-creator-skill/
     └── agent_profile.template.json
 ```
 
-## 发布后如何让别人安装
-
-1. 新建 GitHub 仓库（推荐名：`xiaozhi-agent-creator-skill`）
-2. push 当前目录内容到仓库根目录
-3. 确保仓库是 public（便于 `npx skills add user/repo` 拉取）
-4. 他人执行：
-   - `npx skills add Pesifar/xiaozhi-agent-creator-skill`
-
 ## 致谢参考
 
 - [alchaincyf/zhangxuefeng-skill](https://github.com/alchaincyf/zhangxuefeng-skill)
