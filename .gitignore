@@ -5,3 +5,7 @@ my_agent.json
 .claude/
 .junie/
 skills-lock.json
+.venv/
+vendor/mcp-project/.venv/
+
+.DS_Store

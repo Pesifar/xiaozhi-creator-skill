@@ -1,7 +1,7 @@
 {
   "name": "@pesifar/xiaozhi-creator-skill",
   "version": "1.0.0",
-  "description": "Xiaozhi skill package with six API workflows.",
+  "description": "Xiaozhi skill package with nine API workflows and local MCP onboarding.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -13,7 +13,9 @@
   "files": [
     "SKILL.md",
     "README.md",
+    "bin/",
     "examples/",
-    "references/"
+    "references/",
+    "vendor/"
   ]
 }
