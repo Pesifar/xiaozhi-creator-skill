@@ -436,6 +436,37 @@ wss://api.xiaozhi.me/mcp/?token=<TOKEN>
 5. 重连（mcp_reconnect）
    - 连接中断时，先确认 endpoint 有效，再重启桥接进程并回归连通性测试。
 
+12. 删除智能体
+
+POST: `/api/agents/delete`
+
+请求参数
+
+```json
+{ "id": 1769357 }
+```
+
+| 字段 | 描述 | 类型 | 必填 |
+| --- | --- | --- | --- |
+| id | 智能体 ID（来自接口 1 列表的 `data[].id`） | int | 是 |
+
+返回参数
+
+```json
+{
+  "success": true,
+  "message": "Delete Agent",
+  "data": { "id": 1769357 }
+}
+```
+
+说明：
+
+- 该接口用于删除指定智能体；删除后该智能体下绑定的设备、配置、历史对话等关联数据将不可再访问，操作不可逆，调用前需向用户二次确认。
+- 仅传 `id`，不在 URL 路径中拼接智能体 ID（与「4. 更新智能体」`/api/agents/<:智能体ID>/config` 的风格不同，注意不要混用）。
+- 鉴权同其他接口：`Authorization: Bearer <token>`，`Content-Type: application/json`。
+- 若 `id` 不存在或无权限，应按统一错误约定返回 `success: false` 并提示用户。
+
 脚本/文件接入 MCP 服务（新增）
 
 1. 单服务接入（mcp_add_service）
