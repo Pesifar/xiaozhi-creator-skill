@@ -291,6 +291,37 @@ GET: /api/user/tts-list
 - 选择的 `language` 应与 `tts_voice` 所属语言保持一致；可参考音色列表（接口 7）返回中的 `languages` 与 `tts_voices` 分组。
 - 若用户输入的是中文语种名（如"日语"），需先映射为对应 key（如 `ja`）后再提交。
 
+常用枚举（接口 3、4）
+
+1) 识别速度（`asr_speed`）
+
+```json
+{
+  "normal": "正常",
+  "slow": "缓慢",
+  "fast": "快速"
+}
+```
+
+2) 语速（`tts_speech_speed`）
+
+```json
+{
+  "normal": "正常",
+  "slow": "缓慢",
+  "fast": "快速"
+}
+```
+
+3) 记忆类型（`memory_type`）
+
+```json
+{
+  "SHORT_TERM": "短期记忆",
+  "OFF": "关闭"
+}
+```
+
 10. 历史对话
 
 GET: /api/chats/list
