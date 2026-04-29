@@ -173,23 +173,35 @@ POST: /api/agents/<:智能体ID>/config
 
 5. 设备列表
 
-GET：/api/developers/devices
-
-提交参数
-
-| 字段 | 描述 | 类型 | 必填 |
-| --- | --- | --- | --- |
-| page | 页码 | int | 否 |
-| pageSize | 分页大小 | int | 否 |
-| mac_address | 设备mac地址 | str | 否 |
-| serial_number | 序列号 | str | 否 |
-| product_id | 产品ID | int | 否 |
-| device_id | 设备ID | int | 否 |
+GET：/api/agents/<智能体ID>/devices
 
 返回参数
 
 ```json
-{ "success": true, "data": { "list": [ { "device_id": xxx, // 设备ID "agent_id": xxx, // 智能体ID "id": xxxx, "product_id": xxx, "seed": "xxxxx", "serial_number": "xxxx", "activate_at": "2025-10-11T02:38:06.000Z", "product_name": "xxx", "mac_address": "xxxx", "app_version": "1.8.9", "board_name": "w1.54", "online": true, // 是否在线 }, ...
+{
+    "success": true,
+    "message": "Get all devices",
+    "data": [
+        {
+            "id": 1990929,
+            "user_id": 230815,
+            "mac_address": "fc:01:2c:c9:2b:34",
+            "created_at": "2026-04-23T09:17:51.000Z",
+            "updated_at": "2026-04-23T09:17:51.000Z",
+            "last_connected_at": "2026-04-24T12:46:02.000Z",
+            "auto_update": 1,
+            "alias": null,
+            "agent_id": 1753814,
+            "app_version": "0.5.0",
+            "board_name": "xiaozhi-xxxx",
+            "serial_number": "DAI_XIAOZHI_SDK_04B349319C6276AC",
+            "client_id": "xxxxx",
+            "iccid": "",
+            "is_auth": true,
+            "online": false
+        }
+    ]
+}
 ```
 
 6. 添加设备
