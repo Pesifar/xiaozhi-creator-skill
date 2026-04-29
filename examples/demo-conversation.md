@@ -2,6 +2,27 @@
 
 以下示例用于演示 skill 的典型调用路径。
 
+## 示例 0：手机号登录获取 JWT token
+
+用户：
+我还没有 token，帮我用手机号 +8613537280181 登录小智。
+
+助手（执行思路）：
+1. 使用内置脚本：`bash bin/xiaozhi-login.sh +8613537280181`。
+2. 脚本会按顺序：
+   - `GET /api/auth/captcha`：保存 cookie jar 与图形验证码图片，自动调用系统图片查看器。
+   - 提示用户输入图形验证码 → `POST /api/auth/send-code`（请求 cookie 必须带上 `captcha=...`）。
+   - 提示用户输入短信验证码 → `POST /api/auth/phone-login`，返回 `token` 与 `data` 用户信息。
+3. 脚本将 `token` 与用户信息保存到 `.xiaozhi-auth/token.json`（已 `.gitignore`），后续 API 调用复用。
+4. 在对话中只展示 token 的掩码（首/尾 4 位 + `...`），不要明文外泄。
+
+助手（结果模板）：
+- operation: phone_login
+- status: success
+- key_ids: userId=230810, telephone=+86135****0181, role=admin
+- token_preview: abcd...wxyz
+- next_step: 已保存 token 到 `.xiaozhi-auth/token.json`，可继续执行 `get_agent_list` 或 `create_agent`。
+
 ## 示例 1：创建智能体
 
 用户：

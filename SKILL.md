@@ -1,21 +1,22 @@
 ---
 name: xiaozhi-creator
 description: >-
-  Manage xiaozhi.me agents and devices through nine API workflows: create agent,
-  update agent config, list models, list agents, list devices, add device,
-  list tts voices, list chat history, and generate MCP endpoint token.
-  Includes MCP endpoint-based lifecycle operations: enable, hot-update, and
-  reconnect to agent.
+  Manage xiaozhi.me agents and devices through API workflows: phone login to
+  obtain JWT, create agent, update agent config, list models, list agents,
+  list devices, add device, list tts voices, list chat history, and generate
+  MCP endpoint token. Includes MCP endpoint-based lifecycle operations: enable,
+  hot-update, and reconnect to agent.
   Use when the user requests xiaozhi API operations, agent lifecycle
-  management, or device binding.
+  management, device binding, or phone-based login to xiaozhi.me.
 ---
 
 # Xiaozhi Creator
 
-Use xiaozhi open APIs with JWT bearer auth to complete nine core operations.
+Use xiaozhi open APIs with JWT bearer auth to complete the core operations.
 
 ## Trigger scenarios
 
+- User asks to login to xiaozhi.me with a phone number to obtain JWT token.
 - User asks to create or update a xiaozhi agent.
 - User asks for available model list before selecting `llm_model`.
 - User asks to query agents or devices.
@@ -32,6 +33,7 @@ Use xiaozhi open APIs with JWT bearer auth to complete nine core operations.
 
 ## Supported capabilities
 
+0. Phone login (obtain JWT token via captcha + SMS)
 1. Create agent
 2. Update agent config
 3. Get model list
@@ -43,6 +45,126 @@ Use xiaozhi open APIs with JWT bearer auth to complete nine core operations.
 9. Generate MCP endpoint token, build websocket endpoint, and manage MCP lifecycle
 
 ## API playbook
+
+### 0) Phone login (obtain JWT token)
+
+Use this workflow when the user has no JWT yet and only has a phone number.
+The flow consists of three sequential calls and **requires a shared cookie
+jar** because the captcha cookie issued by step 0.1 must be sent back in
+step 0.2.
+
+> ⚠️ **All three auth endpoints have CORS restrictions** and cannot be
+> called from a browser `fetch` / `XMLHttpRequest`:
+> - `GET  /api/auth/captcha`
+> - `POST /api/auth/send-code`
+> - `POST /api/auth/phone-login`
+>
+> They must be invoked **server-side / from a CLI** (e.g. `curl`, Node
+> `https`, Python `requests`, Go `net/http`). Do **not** try to wire them
+> into a frontend page directly — they will be blocked by the browser's
+> same-origin policy.
+>
+> The provided helper `bin/xiaozhi-login.sh` handles the full flow
+> end-to-end via `curl` and is the recommended path. If you must call them
+> from your own backend, mirror the same cookie-jar handling described
+> below.
+
+#### 0.1) Get image captcha
+
+- Endpoint: `GET /api/auth/captcha`
+- Response:
+  - Body: **SVG XML text**, not a raster image. Looks like:
+
+    ```xml
+    <svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0,0,180,50">
+      ...captcha glyphs...
+    </svg>
+    ```
+
+  - Headers:
+    - `Content-Type: text/html; charset=utf-8` — ⚠️ the server **mislabels**
+      the SVG as `text/html`. Do **not** trust this header to decide how to
+      handle the body; it is genuine SVG.
+    - `Set-Cookie: captcha=captcha:<random_id>`
+- Required handling:
+  - Detect SVG by **sniffing the body** for a leading `<svg` token, not by
+    parsing `Content-Type`.
+  - Persist the response cookie (`captcha=...`) into a cookie jar.
+  - Save the SVG body to a local file with `.svg` extension so the OS opens
+    it in a browser / Preview, regardless of the misleading server header.
+  - On macOS the helper script automatically opens the SVG with the system
+    default app (typically Safari/Chrome). On Linux it tries `xdg-open`.
+  - Do **not** try to decode the SVG to PNG before showing it — sending it
+    directly to a browser-capable viewer is enough for the user to read
+    the characters.
+
+#### 0.2) Send SMS verification code
+
+- Endpoint: `POST /api/auth/send-code`
+- Request cookie (required):
+  - `Cookie: captcha=captcha:<random_id>` (from step 0.1)
+- Request body:
+  - `phone`: full E.164 number, e.g. `"+8613537280181"`
+  - `captcha_code`: the captcha characters the user just read from the image
+- Success pattern:
+  - `success: true`
+- Common failure causes:
+  - Wrong `captcha_code` → repeat step 0.1 to get a new captcha.
+  - Phone format must include country prefix (e.g. `+86`).
+
+#### 0.3) Phone login
+
+- Endpoint: `POST /api/auth/phone-login`
+- Request body:
+  - `phone`: same number used in step 0.2.
+  - `code`: the SMS code received on the phone.
+- Success response shape:
+
+```json
+{
+  "token": "<JWT_TOKEN>",
+  "data": {
+    "userId": 230810,
+    "username": "...",
+    "telephone": "+86135****0181",
+    "role": "user"
+  }
+}
+```
+
+- Required handling after success:
+  - Treat `token` as a sensitive credential. Never echo it in chat logs in
+    full; mask it (e.g. show first/last 4 chars) unless the user explicitly
+    asks.
+  - Persist `token` for downstream API calls as `Authorization: Bearer <token>`.
+  - The helper script writes the token to `.xiaozhi-auth/token.json`
+    (gitignored) for reuse by subsequent operations.
+
+#### 0.4) Helper script (recommended)
+
+Run the interactive helper instead of orchestrating curl calls manually:
+
+- `bash bin/xiaozhi-login.sh +8613537280181`
+- The script will:
+  1. Fetch the captcha image, save it to `.xiaozhi-auth/captcha.<ext>`,
+     save the cookie jar to `.xiaozhi-auth/cookies.txt`, and try to open
+     the image with the system viewer.
+  2. Prompt the user to type the captcha characters.
+  3. Call `/api/auth/send-code` with the captcha cookie.
+  4. Prompt the user to type the SMS code received on the phone.
+  5. Call `/api/auth/phone-login`, save `token` and user info into
+     `.xiaozhi-auth/token.json`, and print a masked summary plus the
+     `export XIAOZHI_TOKEN=...` line for shell reuse.
+
+#### 0.5) Operation contract
+
+When this operation is invoked, return a concise result of this shape:
+
+- `operation`: `phone_login`
+- `status`: `success` / `failed`
+- `key_ids`: `userId=<id>`, `telephone=<masked>`, `role=<role>`
+- `token_preview`: first 4 + `...` + last 4 chars of `token`
+- `next_step`: e.g. "已保存 token，可继续调用 get_agent_list / create_agent。"
 
 ### 1) Create agent
 
@@ -232,6 +354,8 @@ This repository already vendors the MCP sample under `vendor/mcp-project`.
 
 ## Execution order recommendation
 
+0. If no JWT token is available, run phone login (operation 0) first so all
+   downstream calls have `Authorization: Bearer <token>`.
 1. Call model list to validate `llm_model`.
 2. Optionally call tts voice list to validate `tts_voice`.
 3. Create agent.

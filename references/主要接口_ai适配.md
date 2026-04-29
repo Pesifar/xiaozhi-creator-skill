@@ -4,6 +4,109 @@
 
 HTTP Authorization: Bearer <Your_Authorization_Token> // 需要用户提供 Content-Type: application/json
 
+0. 手机号登录（获取 JWT token）
+
+适用场景：当用户尚未持有 `Authorization` token 时，按以下三步获取。
+
+> ⚠️ **以下三个接口都存在跨域（CORS）限制**，浏览器端的
+> `fetch` / `XMLHttpRequest` 调用会被同源策略拦截：
+>
+> - `GET  /api/auth/captcha`
+> - `POST /api/auth/send-code`
+> - `POST /api/auth/phone-login`
+>
+> 必须在服务端 / CLI 端调用（例如 `curl`、Node `https`、Python `requests`、Go `net/http`）。
+> 仓库内置 `bin/xiaozhi-login.sh` 已用 `curl` 封装完整三步，是推荐入口；
+> 若要在自家后端实现，请按照下文同样的 cookie jar 处理方式自己组织请求。
+
+0.1 获取图形验证码
+
+GET: `/api/auth/captcha`
+
+返回值
+
+- 响应体：**SVG 文本**，不是位图二进制。形如：
+
+  ```xml
+  <svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0,0,180,50">
+    ...验证码字形...
+  </svg>
+  ```
+
+- 响应头：
+  - `Content-Type: text/html; charset=utf-8` —— ⚠️ 服务端**把 SVG 错标成了 `text/html`**。
+    不要按 `Content-Type` 决定处理方式（否则会被误识别成 HTML 页面），实际响应体是合法的 SVG。
+  - `Set-Cookie: captcha=captcha:<random_id>`
+
+调用方处理要点
+
+- **嗅探响应体**前几个字节里是否包含 `<svg` 来判断格式，不要依赖 `Content-Type`。
+- 必须把响应中的 `captcha=...` Cookie 持久化到 cookie jar，否则下一步 `send-code` 会失败。
+- 直接把响应体保存为 `.svg` 文件即可（无需 PNG 转码），用浏览器或 macOS Preview 打开都能渲染，不会被误标的 `text/html` 影响。
+- 浏览器端 `fetch` 受 CORS 限制无法获取 `Set-Cookie`，必须服务端 / CLI 调用。
+- 同一个 `captcha` Cookie 仅对接下来的一次 `send-code` 有效；输错或失效后需重新拉取。
+
+0.2 发送短信验证码
+
+POST: `/api/auth/send-code`
+
+请求 Cookie（必传）
+
+- `Cookie: captcha=captcha:<random_id>`（来自 0.1）
+
+请求参数
+
+```json
+{
+  "phone": "+8613537280181",
+  "captcha_code": "图形验证码字符"
+}
+```
+
+返回参数
+
+```json
+{ "success": true }
+```
+
+错误处理
+
+- `captcha_code` 错误：重新调用 0.1 获取新验证码。
+- `phone` 必须带国家区号（如 `+86`）。
+
+0.3 手机号登录
+
+POST: `/api/auth/phone-login`
+
+请求参数
+
+```json
+{
+  "phone": "+8613537280181",
+  "code": "手机收到的短信验证码"
+}
+```
+
+返回参数
+
+```json
+{
+  "token": "<JWT_TOKEN>",
+  "data": {
+    "userId": 230810,
+    "username": "用户名",
+    "telephone": "+86135****0181",
+    "role": "admin"
+  }
+}
+```
+
+后续处理
+
+- `token` 用于后续所有接口：`Authorization: Bearer <token>`。
+- `token` 属于敏感凭据，对话日志中应仅展示前/后 4 位掩码。
+- `bin/xiaozhi-login.sh` 会把 `token` 与用户基本信息保存到 `.xiaozhi-auth/token.json`（已加入 `.gitignore`），并打印 `export XIAOZHI_TOKEN=...` 便于后续脚本复用。
+
 1. 获取 智能体列表
 
 GET: /api/agents
@@ -102,7 +205,7 @@ POST: /api/agents/<:智能体ID>/devices
 返回参数
 
 ```json
-{ "success": true, "message": "添加设备成功", "data": { "id": 600608, "user_id": 230815, "mac_address": "xxxx", "iccid": xxxx, "created_at": "2025-07-18T10:15:24.000Z", // utc 时间 "updated_at": "2025-07-18T10:15:24.000Z", // utc 时间 "last_connected_at": null, "auto_update": 1, "alias": null, "agent_id": xxx, "app_version": "0.0.8", "board_name": "xiaozhi-sdk-0.0.8", "serial_number": "xxx", "is_auth": true, // 设备是否商业授权 } }
+{ "success": true, "message": "添加设备成功", "data": { "id": 600608, "user_id": 230810, "mac_address": "xxxx", "iccid": xxxx, "created_at": "2025-07-18T10:15:24.000Z", // utc 时间 "updated_at": "2025-07-18T10:15:24.000Z", // utc 时间 "last_connected_at": null, "auto_update": 1, "alias": null, "agent_id": xxx, "app_version": "0.0.8", "board_name": "xiaozhi-sdk-0.0.8", "serial_number": "xxx", "is_auth": true, // 设备是否商业授权 } }
 ```
 
 7. 音色列表

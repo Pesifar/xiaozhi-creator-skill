@@ -1,6 +1,6 @@
 # xiaozhi-creator-skill
 
-将小智 API 的 9 个核心能力封装为可安装 skill：创建智能体、更新智能体、模型列表、智能体列表、设备列表、添加设备、音色列表、历史对话列表、MCP 接入点 token 生成与使用。
+将小智 API 的核心能力封装为可安装 skill：手机号登录获取 JWT、创建智能体、更新智能体、模型列表、智能体列表、设备列表、添加设备、音色列表、历史对话列表、MCP 接入点 token 生成与使用。
 
 ## 安装
 
@@ -16,6 +16,10 @@ npx skills add Pesifar/xiaozhi-creator-skill
 
 ## 能力范围
 
+0. 手机号登录获取 JWT token（图形验证码 + 短信验证码，**三个接口均有 CORS 限制，必须服务端 / CLI 调用**）：
+   - `GET  /api/auth/captcha`（保留 `Set-Cookie: captcha=...` 给后续步骤使用）
+   - `POST /api/auth/send-code`（请求时需带回 `captcha=...` cookie）
+   - `POST /api/auth/phone-login`（返回 `token` 用作后续 `Authorization: Bearer ...`）
 1. 创建智能体：`POST /api/agents`
 2. 更新智能体：`POST /api/agents/<agent_id>/config`
 3. 模型列表：`GET /api/roles/model-list`
@@ -25,6 +29,26 @@ npx skills add Pesifar/xiaozhi-creator-skill
 7. 音色列表：`GET /api/user/tts-list`
 8. 历史对话：`GET /api/chats/list`
 9. 获取MCP接入地址：`POST /api/agents/<agent_id>/generate-mcp-endpoint-token`
+
+## 手机号登录快速使用
+
+```bash
+bash bin/xiaozhi-login.sh +8613537280181
+```
+
+脚本流程：
+
+1. 拉取图形验证码图片（保存到 `.xiaozhi-auth/captcha.<ext>`，并把 `captcha=...` cookie 写入 `.xiaozhi-auth/cookies.txt`），macOS 下会自动用系统看图工具打开。
+2. 终端提示输入图形验证码 → 调用 `POST /api/auth/send-code`（带回 cookie）。
+3. 终端提示输入手机收到的短信验证码 → 调用 `POST /api/auth/phone-login`。
+4. 把 `token` 与用户信息保存到 `.xiaozhi-auth/token.json`（已加入 `.gitignore`），并打印掩码后的 token 摘要。
+
+后续接口调用可一键复用该 token：
+
+```bash
+export XIAOZHI_TOKEN="$(python3 -c 'import json; print(json.load(open(".xiaozhi-auth/token.json"))["token"])')"
+curl -H "Authorization: Bearer $XIAOZHI_TOKEN" https://xiaozhi.me/api/agents
+```
 
 ## MCP 创建使用补充
 
@@ -62,6 +86,7 @@ xiaozhi-creator-skill/
 ├── SKILL.md
 ├── README.md
 ├── bin/
+│   ├── xiaozhi-login.sh
 │   ├── mcp-local-prepare.sh
 │   ├── mcp-local-enable.sh
 │   └── mcp-local-batch.sh
