@@ -3,9 +3,9 @@ name: xiaozhi-creator
 description: >-
   Manage xiaozhi.me agents and devices through API workflows: phone login to
   obtain JWT, create agent, update agent config, list models, list agents,
-  list devices, add device, list tts voices, list chat history, and generate
-  MCP endpoint token. Includes MCP endpoint-based lifecycle operations: enable,
-  hot-update, and reconnect to agent.
+  list devices, add device, list tts voices, list chat history, list official
+  MCP tools, and generate MCP endpoint token. Includes MCP endpoint-based
+  lifecycle operations: enable, hot-update, and reconnect to agent.
   Use when the user requests xiaozhi API operations, agent lifecycle
   management, device binding, or phone-based login to xiaozhi.me.
 ---
@@ -21,6 +21,8 @@ Use xiaozhi open APIs with JWT bearer auth to complete the core operations.
 - User asks for available model list before selecting `llm_model`.
 - User asks to query agents or devices.
 - User asks to bind a device to an agent using verification code.
+- User asks which official MCP tools are available, or wants to pick the
+  `mcp_endpoints` value when creating/updating an agent.
 
 ## Authentication and base rules
 
@@ -42,7 +44,8 @@ Use xiaozhi open APIs with JWT bearer auth to complete the core operations.
 6. Add device to agent
 7. Get tts voice list
 8. Get chat history list
-9. Generate MCP endpoint token, build websocket endpoint, and manage MCP lifecycle
+9. List official MCP tools (`mcp_endpoints` candidates)
+10. Generate MCP endpoint token, build websocket endpoint, and manage MCP lifecycle
 
 ## API playbook
 
@@ -179,6 +182,11 @@ When this operation is invoked, return a concise result of this shape:
   - `asr_speed: "normal"`
   - `language: "zh"`
   - `memory_type: "SHORT_TERM"`
+- Optional `mcp_endpoints` field (list of official MCP tool ids):
+  - `null` (default) — load all official MCP tools.
+  - `[]` — load no official MCP tools.
+  - `["<endpoint_id>", ...]` — load only the listed tools. Source the ids
+    from operation 9 (`GET /api/agents/common-mcp-tool/list`).
 - Success pattern:
   - `success: true`
   - `data.id` exists (new agent id)
@@ -187,6 +195,8 @@ When this operation is invoked, return a concise result of this shape:
 
 - Endpoint: `POST /api/agents/<agent_id>/config`
 - Use full config payload shape from create API.
+- `mcp_endpoints` follows the same semantics as create agent (see operation 9
+  for how to source `endpoint_id` candidates).
 - Important note:
   - Device restart is required after update to apply config.
 - Handle known errors by code:
@@ -254,7 +264,26 @@ When this operation is invoked, return a concise result of this shape:
   - Validate `startDate` before calling API.
   - Return concise list with `id`, `created_at`, `chat_summary.title`, and `msg_count`.
 
-### 9) MCP create and usage
+### 9) List official MCP tools
+
+- Endpoint: `GET /api/agents/common-mcp-tool/list`
+- Auth: `Authorization: Bearer <JWT_TOKEN>`
+- Response shape (`data[]`):
+  - `endpoint_id` (string) — value to feed into `mcp_endpoints` of create/update agent.
+  - `name` — display name (e.g. `Weather`, `Music`, `News`, `knowledgeBase`).
+  - `language` (optional) — language restriction code (e.g. `zh`).
+  - `debug` (optional, bool) — beta tool, hide by default.
+- Recommended usage:
+  - Call before create/update agent when the user wants to pick official MCP tools.
+  - Filter out entries with `debug: true` unless the user asks for debug tools.
+  - Prefer entries whose `language` matches the agent's `language`, or has no
+    `language` field at all (treat missing as universal).
+- `mcp_endpoints` semantics in create/update agent:
+  - `["<endpoint_id>", ...]` — load only the selected official tools.
+  - `[]` — load no official MCP tools.
+  - `null` — load all official MCP tools (default behavior).
+
+### 10) MCP create and usage
 
 - Endpoint: `POST /api/agents/<agent_id>/generate-mcp-endpoint-token`
 - Console path (official):
@@ -282,7 +311,7 @@ When this operation is invoked, return a concise result of this shape:
   - Tool list size is limited and later shown in console.
   - Each MCP endpoint has a connection limit; advise user to close idle clients.
 
-### 9.1) MCP service lifecycle (endpoint-driven)
+### 10.1) MCP service lifecycle (endpoint-driven)
 
 Use this standard workflow so MCP can be enabled/updated anytime:
 
@@ -303,7 +332,7 @@ Use this standard workflow so MCP can be enabled/updated anytime:
    - Restore previous MCP server code version.
    - Restart bridge process with known-good code and current valid endpoint.
 
-### 9.2) Add MCP service from script/file
+### 10.2) Add MCP service from script/file
 
 Allow user to onboard MCP by only providing script code or file:
 
@@ -328,7 +357,7 @@ Allow user to onboard MCP by only providing script code or file:
    - For same endpoint (same agent), keep exactly one bridge process and one ws connection.
    - Adding or removing services only updates config and keeps that single bridge running.
 
-### 9.3) Local fast environment setup (no GitHub download needed)
+### 10.3) Local fast environment setup (no GitHub download needed)
 
 This repository already vendors the MCP sample under `vendor/mcp-project`.
 
@@ -342,7 +371,7 @@ This repository already vendors the MCP sample under `vendor/mcp-project`.
 3. Result:
    - MCP bridge starts locally and can be synced to target agent immediately.
 
-### 9.4) Recommended operation modes
+### 10.4) Recommended operation modes
 
 - `mcp_enable`: first-time endpoint setup and connectivity check.
 - `mcp_add_service`: add one script file as MCP service.
@@ -351,6 +380,8 @@ This repository already vendors the MCP sample under `vendor/mcp-project`.
 - `mcp_rotate_token`: regenerate token and refresh endpoint.
 - `mcp_reconnect`: recover from disconnected state.
 - `mcp_preflight_check`: check naming, docs, payload, connection limits.
+- `list_official_mcp_tools`: fetch `mcp_endpoints` candidates before
+  create/update agent.
 
 ## Execution order recommendation
 
@@ -358,17 +389,19 @@ This repository already vendors the MCP sample under `vendor/mcp-project`.
    downstream calls have `Authorization: Bearer <token>`.
 1. Call model list to validate `llm_model`.
 2. Optionally call tts voice list to validate `tts_voice`.
-3. Create agent.
-4. Optionally update config for advanced fields.
-5. Query device list if user needs filtering.
-6. Add device to target agent.
-7. Optionally query chat history for recent conversations.
-8. If user needs MCP integration, use user-provided endpoint or generate token.
-9. Return concise summary with ids and next actions.
+3. Optionally call official MCP tool list (operation 9) when the user wants
+   to pick `mcp_endpoints` for create/update agent.
+4. Create agent.
+5. Optionally update config for advanced fields.
+6. Query device list if user needs filtering.
+7. Add device to target agent.
+8. Optionally query chat history for recent conversations.
+9. If user needs MCP integration, use user-provided endpoint or generate token.
+10. Return concise summary with ids and next actions.
 
 ## MCP response recommendation
 
-When operation 9 is called, return this shape:
+When operation 10 is called, return this shape:
 
 - `operation`: one of `mcp_enable` / `mcp_add_service` / `mcp_add_services_batch` / `mcp_update` / `mcp_rotate_token` / `mcp_reconnect`
 - `status`: `success` or `failed`

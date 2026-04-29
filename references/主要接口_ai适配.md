@@ -328,6 +328,47 @@ GET: /api/chats/list
 - `startDate` 为必填，建议默认查询近 7 天并允许用户调整日期区间。
 - 列表结果优先展示：`id`、`created_at`、`chat_summary.title`、`msg_count`。
 
+9. 官方 MCP 工具列表
+
+GET: `/api/agents/common-mcp-tool/list`
+
+请求参数
+
+无（仅需 `Authorization: Bearer <token>`）。
+
+返回参数
+
+```json
+{
+  "success": true,
+  "data": [
+    { "endpoint_id": "2",   "name": "Weather" },
+    { "endpoint_id": "8",   "name": "Joke",          "language": "zh" },
+    { "endpoint_id": "9",   "name": "Music" },
+    { "endpoint_id": "101", "name": "News",          "language": "zh" },
+    { "endpoint_id": "104", "name": "knowledgeBase" },
+    { "endpoint_id": "12",  "name": "onlineMusic",   "debug": true }
+  ]
+}
+```
+
+字段说明
+
+- `endpoint_id`：官方 MCP 工具的接入点 ID（字符串）。用于创建/更新智能体（接口 3、4）的 `mcp_endpoints` 字段。
+- `name`：工具展示名（如 `Weather`、`Music`、`knowledgeBase`），用于让用户挑选。
+- `language`（可选）：工具仅支持的语言代码（如 `zh`）。未返回该字段视为通用工具。
+- `debug`（可选，布尔）：调试中工具，仅供内测，默认不展示给最终用户。
+
+使用建议
+
+- 调用创建/更新智能体前，先拉取本接口列表，配合用户已选 `language` 过滤后给出可选项。
+  - 示例：`language=zh` 时保留 `language` 缺失或等于 `zh` 的条目。
+- 默认过滤掉 `debug: true` 的条目，除非用户明确要求查看调试工具。
+- 提交给 `mcp_endpoints` 时使用 `endpoint_id`（字符串数组），并区分以下三种语义：
+  - `mcp_endpoints: ["<id>", ...]`：仅启用所选官方工具。
+  - `mcp_endpoints: []`：不加载任何官方 MCP 工具。
+  - `mcp_endpoints: null`：加载全部官方 MCP 工具（默认行为）。
+
 11. MCP 创建使用（获取接入点 token）
 
 POST: `/api/agents/<:智能体ID>/generate-mcp-endpoint-token`

@@ -101,6 +101,26 @@
 - key_ids: none
 - next_step: 告诉我要查看的会话ID（id），我可以继续帮你展开详细消息。
 
+## 示例 5.1：列出官方 MCP 工具并挑选 mcp_endpoints
+
+用户：
+我想给智能体启用官方的天气和音乐工具，怎么填 `mcp_endpoints`？
+
+助手（执行思路）：
+1. 调用 `GET /api/agents/common-mcp-tool/list`。
+2. 默认过滤掉 `debug: true` 的条目；按智能体当前 `language` 过滤 `language` 字段（缺失视为通用）。
+3. 把 `name` 与 `endpoint_id` 一一展示，让用户挑选。
+4. 用户选定后，把对应 `endpoint_id` 拼成字符串数组传给创建/更新接口的 `mcp_endpoints`：
+   - `["2", "9"]` —— 仅启用 Weather 与 Music。
+   - `[]` —— 不加载任何官方 MCP 工具。
+   - `null` —— 加载全部官方 MCP 工具（默认）。
+
+助手（结果模板）：
+- operation: list_official_mcp_tools
+- status: success
+- key_ids: none
+- next_step: 选定后我会用 `mcp_endpoints=["2","9"]` 调用 update_agent_config。
+
 ## 示例 6：MCP 创建使用（生成接入 token）
 
 用户：
