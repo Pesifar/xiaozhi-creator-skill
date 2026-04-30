@@ -852,6 +852,161 @@ POST: `/api/agents/delete`
    - 改脚本：替换脚本文件后重启进程。
    - 改配置：更新 `mcp_config.json` 后重启进程。
 
+15. 设备端 MCP 交互
+
+通过消息通道（messaging）直接与设备端的 MCP 工具进行交互，适用于远程查询设备状态、控制设备等场景。
+
+15.1 获取 MCP 交互 token
+
+POST: `/api/agents/generate-messaging-token`
+
+请求参数
+
+```json
+{
+  "macAddress": "80:b5:4e:d8:xx:xx"
+}
+```
+
+| 字段 | 描述 | 类型 | 必填 |
+| --- | --- | --- | --- |
+| macAddress | 设备 MAC 地址 | string | 是 |
+
+返回参数
+
+```json
+{
+  "success": true,
+  "message": "Messaging token generated successfully",
+  "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+说明：
+
+- 该 token 用于后续设备端 MCP 工具交互接口的鉴权。
+- `token` 属于敏感凭据，日志中应仅展示前/后 4 位掩码。
+- 后续调用设备 MCP 接口时，需将此 token 放入请求头：`Authorization: Bearer <messaging_token>`。
+- 该 token 也可用于打开自定义主题页面（见 15.4）。
+
+15.2 获取设备 MCP 工具列表
+
+POST: `/api/messaging/device/tools/list`
+
+请求参数
+
+无（仅需 `Authorization: Bearer <messaging_token>`）。
+
+返回参数
+
+```json
+{
+  "success": true,
+  "message": "Tools list fetched successfully",
+  "data": {
+    "tools": [
+      {
+        "name": "self.get_device_status",
+        "description": "Provides the real-time information of the device...",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "self.reboot",
+        "description": "Reboot the system",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {
+          "audience": ["user"]
+        }
+      }
+    ]
+  }
+}
+```
+
+字段说明
+
+- `name`：工具名称，以 `self.` 前缀标识为设备内建工具。
+- `description`：工具描述，说明用途和触发场景。
+- `inputSchema`：工具输入参数的 JSON Schema 定义。
+- `annotations`（可选）：额外注解信息，如 `audience` 标注工具的受众类型。
+
+15.3 调用设备 MCP 工具
+
+POST: `/api/messaging/device/tools/call`
+
+请求参数
+
+```json
+{
+  "name": "self.get_device_status",
+  "arguments": {}
+}
+```
+
+| 字段 | 描述 | 类型 | 必填 |
+| --- | --- | --- | --- |
+| name | 工具名称（来自 15.2 返回的 `tools[].name`） | string | 是 |
+| arguments | 工具调用参数（按工具的 `inputSchema` 传入） | object | 是 |
+
+返回参数（示例：`self.get_device_status`）
+
+```json
+{
+  "success": true,
+  "message": "Tools called successfully",
+  "data": {
+    "audio_speaker": {
+      "volume": 30
+    },
+    "screen": {
+      "brightness": 75,
+      "theme": "light"
+    },
+    "battery": {
+      "level": 23,
+      "charging": false
+    },
+    "network": {
+      "type": "wifi",
+      "ssid": "Shifang-xiaozhi-AI",
+      "signal": "medium"
+    }
+  }
+}
+```
+
+说明：
+
+- 返回值 `data` 的结构取决于具体调用的工具，上例为 `self.get_device_status` 的返回。
+- 调用前应先通过 15.2 获取设备可用工具列表，确认目标工具存在。
+- 危险操作（如 `self.reboot`）调用前需向用户二次确认。
+
+15.4 自定义主题页面
+
+页面地址：`https://xiaozhi.me/tools/assets-generator/?token=<messaging_token>`
+
+使用方式
+
+- 将 15.1 获取的 `token` 拼接到 URL 末尾，在浏览器新标签页中打开即可。
+- 该页面用于自定义设备的显示主题/素材。
+
+调用流程
+
+1. 通过 15.1 获取 messaging token（需提供设备 MAC 地址）。
+2. 拼接完整 URL：`https://xiaozhi.me/tools/assets-generator/?token=<token>`。
+3. 在新标签页中打开该 URL。
+
+说明：
+
+- 无需额外 API 调用，直接浏览器打开即可使用。
+- `token` 有时效性，过期后需重新通过 15.1 获取。
+
 本地加速建议（SDK 方式）
 
 1. 项目使用 `git+https://github.com/dairoot/mcp-calculator` 提供的 `xiaozhi_mcp` SDK。

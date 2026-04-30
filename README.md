@@ -35,6 +35,11 @@ npx skills add Pesifar/xiaozhi-creator-skill
    - `POST /api/v2/agents/<agent_id>/speakers`
    - `POST /api/v2/agents/<agent_id>/speakers/<id>`
    - `DELETE /api/agents/<agent_id>/speakers/<id>`
+11. 设备端 MCP 交互（远程查询/控制设备）：
+   - `POST /api/agents/generate-messaging-token`（获取设备交互 token）
+   - `POST /api/messaging/device/tools/list`（获取设备可用 MCP 工具列表）
+   - `POST /api/messaging/device/tools/call`（调用设备 MCP 工具）
+   - 自定义主题页面：`https://xiaozhi.me/tools/assets-generator/?token=<token>`（新标签页打开）
 
 ## 手机号登录快速使用
 

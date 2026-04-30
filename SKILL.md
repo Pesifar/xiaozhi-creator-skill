@@ -4,10 +4,12 @@ description: >-
   Manage xiaozhi.me agents and devices through API workflows: phone login to
   obtain JWT, create agent, update agent config, list models, list agents,
   list devices, add device, list tts voices, list chat history, manage speaker
-  recognition, list official MCP tools, and generate MCP endpoint token. Includes
-  MCP endpoint-based lifecycle operations: enable, hot-update, and reconnect to agent.
-  Use when the user requests xiaozhi API operations, agent lifecycle
-  management, device binding, or phone-based login to xiaozhi.me.
+  recognition, list official MCP tools, generate MCP endpoint token, and
+  interact with device-side MCP tools (query device status, reboot, etc.).
+  Includes MCP endpoint-based lifecycle operations: enable, hot-update, and
+  reconnect to agent. Use when the user requests xiaozhi API operations, agent
+  lifecycle management, device binding, device remote control, or phone-based
+  login to xiaozhi.me.
 ---
 
 # Xiaozhi Creator
@@ -25,6 +27,9 @@ Use xiaozhi open APIs with JWT bearer auth to complete the core operations.
   entries for an agent.
 - User asks which official MCP tools are available, or wants to pick the
   `mcp_endpoints` value when creating/updating an agent.
+- User asks to remotely query device status, control a device (volume, brightness,
+  reboot, etc.), or list available device-side MCP tools.
+- User asks to customize a device theme or open the assets generator page.
 
 ## Authentication and base rules
 
@@ -49,6 +54,7 @@ Use xiaozhi open APIs with JWT bearer auth to complete the core operations.
 9. List official MCP tools (`mcp_endpoints` candidates)
 10. Generate MCP endpoint token, build websocket endpoint, and manage MCP lifecycle
 11. Manage speaker recognition entries and available voice embeddings
+12. Device-side MCP interaction (generate messaging token, list device tools, call device tools, open custom theme page)
 
 ## API playbook
 
@@ -450,6 +456,94 @@ recognition for a specific agent.
   - Confirm the target speaker id/name with the user before deletion.
   - Note this delete endpoint uses the non-v2 path.
 
+### 12) Device-side MCP interaction
+
+Use these endpoints to remotely interact with device-side MCP tools (query
+device status, adjust volume/brightness, reboot, etc.). The flow requires a
+**messaging token** that is different from the main JWT token.
+
+#### 12.1) Generate messaging token
+
+- Endpoint: `POST /api/agents/generate-messaging-token`
+- Body:
+  - `macAddress`: device MAC address (e.g. `"80:b5:4e:d8:67:0c"`)
+- Success pattern:
+  - `success: true`
+  - `token` exists (messaging token for device interaction)
+- Required handling:
+  - Use the returned `token` as `Authorization: Bearer <messaging_token>` for
+    subsequent device MCP calls (12.2 and 12.3).
+  - This token is separate from the main JWT; do not confuse them.
+  - Mask `token` in logs (show first/last 4 chars only).
+
+#### 12.2) List device MCP tools
+
+- Endpoint: `POST /api/messaging/device/tools/list`
+- Auth: `Authorization: Bearer <messaging_token>` (from 12.1)
+- No request body required.
+- Success pattern:
+  - `success: true`
+  - `data.tools[]` contains available device tools, each with `name`,
+    `description`, `inputSchema`, and optional `annotations`.
+- Tool naming convention:
+  - Device built-in tools use `self.` prefix (e.g. `self.get_device_status`,
+    `self.reboot`).
+- Recommended usage:
+  - Always call this before 12.3 to verify the target tool exists on the device.
+  - Present available tools to the user with `name` and `description`.
+
+#### 12.3) Call device MCP tool
+
+- Endpoint: `POST /api/messaging/device/tools/call`
+- Auth: `Authorization: Bearer <messaging_token>` (from 12.1)
+- Body:
+  - `name`: tool name from 12.2 result (e.g. `"self.get_device_status"`)
+  - `arguments`: object matching the tool's `inputSchema` (e.g. `{}`)
+- Success pattern:
+  - `success: true`
+  - `data` contains tool-specific return payload.
+- Safety rules:
+  - For destructive operations (e.g. `self.reboot`), confirm with the user
+    before calling.
+  - Check `annotations.audience` from 12.2 — tools marked `["user"]` are
+    user-facing and may require explicit consent.
+- Example response (`self.get_device_status`):
+  - `data.audio_speaker.volume`, `data.screen.brightness`,
+    `data.battery.level`, `data.network.ssid`, etc.
+
+#### 12.4) Open custom theme page
+
+- URL pattern: `https://xiaozhi.me/tools/assets-generator/?token=<messaging_token>`
+- Auth: uses the `messaging_token` from 12.1 as a query parameter (not a header).
+- Action: open the assembled URL in a **new browser tab**.
+- No API call needed — this is a browser-based page for customizing device
+  display themes and assets.
+- Typical workflow:
+  1. Get messaging token via 12.1 (requires device MAC address).
+  2. Assemble URL: `https://xiaozhi.me/tools/assets-generator/?token=<token>`.
+  3. Open the URL in a new tab (use `open` on macOS, `xdg-open` on Linux,
+     or return the URL for the user to click).
+- Token has a TTL; regenerate via 12.1 if expired.
+
+#### 12.5) Typical device interaction workflow
+
+1. Obtain the device MAC address (from device list API operation 5, or user input).
+2. Call 12.1 to generate a messaging token for that device.
+3. Call 12.2 to discover available tools on the device.
+4. Call 12.3 to invoke the desired tool.
+5. Or open the custom theme page via 12.4 if the user wants to customize the display.
+6. Return a concise summary of the result to the user.
+
+#### 12.6) Operation contract
+
+When device MCP operations are invoked, return this shape:
+
+- `operation`: one of `device_get_token` / `device_list_tools` / `device_call_tool` / `device_custom_theme`
+- `status`: `success` or `failed`
+- `key_ids`: `mac_address`, `tool_name` (when applicable)
+- `result`: tool return data summary
+- `next_step`: e.g. "可继续调用其他设备工具，或调整设备设置。"
+
 ## Execution order recommendation
 
 0. If no JWT token is available, run phone login (operation 0) first so all
@@ -466,7 +560,9 @@ recognition for a specific agent.
 9. For speaker recognition, query available embeddings before add/update when
    the user has not supplied `voice_embedding_id`.
 10. If user needs MCP integration, use user-provided endpoint or generate token.
-11. Return concise summary with ids and next actions.
+11. If user wants to interact with a specific device, generate messaging token
+    (operation 12) and list/call device tools.
+12. Return concise summary with ids and next actions.
 
 ## MCP response recommendation
 
