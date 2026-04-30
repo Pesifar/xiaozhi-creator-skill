@@ -514,7 +514,7 @@ POST: `/api/v2/agents/<:智能体ID>/speakers`
 
 4. 更新声纹识别信息
 
-POST: `/api/v2/agents/<:智能体ID>/speakers/<:id>`
+PUT: `/api/v2/agents/<:智能体ID>/speakers/<:id>`
 
 请求参数
 
