@@ -3,9 +3,9 @@ name: xiaozhi-creator
 description: >-
   Manage xiaozhi.me agents and devices through API workflows: phone login to
   obtain JWT, create agent, update agent config, list models, list agents,
-  list devices, add device, list tts voices, list chat history, list official
-  MCP tools, and generate MCP endpoint token. Includes MCP endpoint-based
-  lifecycle operations: enable, hot-update, and reconnect to agent.
+  list devices, add device, list tts voices, list chat history, manage speaker
+  recognition, list official MCP tools, and generate MCP endpoint token. Includes
+  MCP endpoint-based lifecycle operations: enable, hot-update, and reconnect to agent.
   Use when the user requests xiaozhi API operations, agent lifecycle
   management, device binding, or phone-based login to xiaozhi.me.
 ---
@@ -21,6 +21,8 @@ Use xiaozhi open APIs with JWT bearer auth to complete the core operations.
 - User asks for available model list before selecting `llm_model`.
 - User asks to query agents or devices.
 - User asks to bind a device to an agent using verification code.
+- User asks to list, add, update, or delete voiceprint/speaker recognition
+  entries for an agent.
 - User asks which official MCP tools are available, or wants to pick the
   `mcp_endpoints` value when creating/updating an agent.
 
@@ -46,6 +48,7 @@ Use xiaozhi open APIs with JWT bearer auth to complete the core operations.
 8. Get chat history list
 9. List official MCP tools (`mcp_endpoints` candidates)
 10. Generate MCP endpoint token, build websocket endpoint, and manage MCP lifecycle
+11. Manage speaker recognition entries and available voice embeddings
 
 ## API playbook
 
@@ -386,6 +389,67 @@ This repository uses the packaged bridge SDK from `dairoot/mcp-calculator`; do n
 - `list_official_mcp_tools`: fetch `mcp_endpoints` candidates before
   create/update agent.
 
+### 11) Speaker recognition
+
+Use these endpoints when the user wants to manage voiceprint/speaker
+recognition for a specific agent.
+
+#### 11.1) Get speaker list
+
+- Endpoint: `GET /api/agents/<agent_id>/speakers`
+- Success pattern:
+  - `success: true`
+  - `message: "Get speakers successfully"`
+  - `data[]` contains `id`, `user_id`, `name`, `description`, `embedding`,
+    `created_at`, and `agent_id`.
+- Recommended usage:
+  - Show concise entries with `id`, `name`, `description`, and `created_at`.
+  - Do not expand or print the full `embedding` value unless explicitly needed.
+
+#### 11.2) Get available voice embeddings
+
+- Endpoint: `GET /api/v2/agents/<agent_id>/available-embeddings`
+- Success pattern:
+  - `success: true`
+  - `message: "Get available embeddings successfully"`
+  - `data[]` contains chat/message metadata plus `voice_embedding_id`, `name`,
+    `content`, `created_at`, `agent_id`, and `url`.
+- Recommended usage:
+  - Call before adding or updating a speaker if the user has not provided a
+    `voice_embedding_id`.
+  - Present candidates by `voice_embedding_id`, `name`, `content`, `created_at`,
+    and `url` so the user can identify the correct audio sample.
+
+#### 11.3) Add speaker recognition
+
+- Endpoint: `POST /api/v2/agents/<agent_id>/speakers`
+- Body:
+  - `name`
+  - `description`
+  - `voice_embedding_id`
+- Success pattern:
+  - `success: true`
+  - `message: "添加说话人成功"`
+  - `data.id` is the new speaker id.
+
+#### 11.4) Update speaker recognition
+
+- Endpoint: `POST /api/v2/agents/<agent_id>/speakers/<id>`
+- Body:
+  - `voice_embedding_id`
+  - `name`
+  - `description`
+- Recommended usage:
+  - Submit the complete speaker payload rather than partial fields.
+  - Confirm both `agent_id` and speaker `id` before calling.
+
+#### 11.5) Delete speaker recognition
+
+- Endpoint: `DELETE /api/agents/<agent_id>/speakers/<id>`
+- Recommended usage:
+  - Confirm the target speaker id/name with the user before deletion.
+  - Note this delete endpoint uses the non-v2 path.
+
 ## Execution order recommendation
 
 0. If no JWT token is available, run phone login (operation 0) first so all
@@ -399,8 +463,10 @@ This repository uses the packaged bridge SDK from `dairoot/mcp-calculator`; do n
 6. Query device list if user needs filtering.
 7. Add device to target agent.
 8. Optionally query chat history for recent conversations.
-9. If user needs MCP integration, use user-provided endpoint or generate token.
-10. Return concise summary with ids and next actions.
+9. For speaker recognition, query available embeddings before add/update when
+   the user has not supplied `voice_embedding_id`.
+10. If user needs MCP integration, use user-provided endpoint or generate token.
+11. Return concise summary with ids and next actions.
 
 ## MCP response recommendation
 

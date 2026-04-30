@@ -1,6 +1,6 @@
 # xiaozhi-creator-skill
 
-将小智 API 的核心能力封装为可安装 skill：手机号登录获取 JWT、创建智能体、更新智能体、模型列表、智能体列表、设备列表、添加设备、音色列表、历史对话列表、MCP 接入点 token 生成与使用。
+将小智 API 的核心能力封装为可安装 skill：手机号登录获取 JWT、创建智能体、更新智能体、模型列表、智能体列表、设备列表、添加设备、音色列表、历史对话列表、声纹识别管理、MCP 接入点 token 生成与使用。
 
 ## 安装
 
@@ -29,6 +29,12 @@ npx skills add Pesifar/xiaozhi-creator-skill
 7. 音色列表：`GET /api/user/tts-list`
 8. 历史对话：`GET /api/chats/list`
 9. 获取MCP接入地址：`POST /api/agents/<agent_id>/generate-mcp-endpoint-token`
+10. 声纹识别：
+   - `GET /api/agents/<agent_id>/speakers`
+   - `GET /api/v2/agents/<agent_id>/available-embeddings`
+   - `POST /api/v2/agents/<agent_id>/speakers`
+   - `POST /api/v2/agents/<agent_id>/speakers/<id>`
+   - `DELETE /api/agents/<agent_id>/speakers/<id>`
 
 ## 手机号登录快速使用
 

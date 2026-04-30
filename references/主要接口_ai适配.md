@@ -416,7 +416,145 @@ GET: /api/chats/messages
 }
 ```
 
-9. 官方 MCP 工具列表
+11. 声纹识别
+
+1. 获取声纹识别列表
+
+GET: `/api/agents/<:智能体ID>/speakers`
+
+返回参数
+
+```json
+{
+  "success": true,
+  "message": "Get speakers successfully",
+  "data": [
+    {
+      "id": xxx,
+      "user_id": xxx,
+      "name": "test",
+      "description": "",
+      "embedding": "",
+      "created_at": "2025-07-18T10:12:31.000Z",
+      "agent_id": 466397
+    }
+  ]
+}
+```
+
+说明：
+
+- `created_at` 为 UTC 时间。
+- `embedding` 为服务端保存的声纹向量内容；对外展示时通常无需展开。
+
+2. 获取音频向量
+
+GET: `/api/v2/agents/<:智能体ID>/available-embeddings`
+
+返回参数
+
+```json
+{
+  "success": true,
+  "message": "Get available embeddings successfully",
+  "data": [
+    {
+      "id": xxx,
+      "user_id": xx,
+      "chat_id": xxx,
+      "role": "user",
+      "content": "到我可以单独买工具调子去包啊。",
+      "voice_embedding_id": "xxxx.wav",
+      "created_at": "2025-12-01T13:00:03.000Z",
+      "name": "unknown_2",
+      "prompt_tokens": 0,
+      "total_tokens": 0,
+      "completion_tokens": 0,
+      "prompt_ms": 0,
+      "total_ms": 0,
+      "completion_ms": 0,
+      "model": "qwen",
+      "agent_id": xx,
+      "url": "..." // 音频播放地址
+    }
+  ]
+}
+```
+
+说明：
+
+- 用于从历史对话中挑选可绑定到说话人的 `voice_embedding_id`。
+- `url` 为音频资源地址，可用于辅助用户确认样本音频。
+
+3. 添加声纹识别
+
+POST: `/api/v2/agents/<:智能体ID>/speakers`
+
+请求参数
+
+```json
+{
+  "name": "12313",
+  "description": "描述",
+  "voice_embedding_id": ""
+}
+```
+
+返回参数
+
+```json
+{
+  "success": true,
+  "message": "添加说话人成功",
+  "data": {
+    "id": 248841
+  }
+}
+```
+
+4. 更新声纹识别信息
+
+POST: `/api/v2/agents/<:智能体ID>/speakers/<:id>`
+
+请求参数
+
+```json
+{
+  "voice_embedding_id": "8da8a749-3dc5-4609-ad2d-b715497270f2.wav",
+  "name": "test",
+  "description": "描述"
+}
+```
+
+返回参数
+
+```json
+{
+  "success": true
+}
+```
+
+说明：
+
+- 更新接口使用 v2 路径；建议提交完整的 `voice_embedding_id`、`name`、`description`。
+
+5. 删除声纹识别
+
+DELETE: `/api/agents/<:智能体ID>/speakers/<:id>`
+
+返回参数
+
+```json
+{
+  "success": true
+}
+```
+
+说明：
+
+- 删除接口使用非 v2 路径，调用前应向用户确认目标说话人 `id` 与名称。
+
+12. 官方 MCP 工具列表
 
 GET: `/api/agents/common-mcp-tool/list`
 
@@ -457,7 +595,7 @@ GET: `/api/agents/common-mcp-tool/list`
   - `mcp_endpoints: []`：不加载任何官方 MCP 工具。
   - `mcp_endpoints: null`：加载全部官方 MCP 工具（默认行为）。
 
-11. MCP 创建使用（获取接入点 token）
+13. MCP 创建使用（获取接入点 token）
 
 POST: `/api/agents/<:智能体ID>/generate-mcp-endpoint-token`
 
@@ -667,7 +805,7 @@ curl -H "Authorization: Bearer <token>" \
 5. 重连（mcp_reconnect）
    - 连接中断时，先确认 endpoint 有效，再重启桥接进程并回归连通性测试。
 
-12. 删除智能体
+14. 删除智能体
 
 POST: `/api/agents/delete`
 
