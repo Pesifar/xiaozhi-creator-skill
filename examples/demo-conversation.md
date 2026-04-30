@@ -159,7 +159,7 @@
 1. 读取用户提供的 `mcp_endpoint`，不再重复申请 token。
 2. 提供桥接运行命令：
    - `export MCP_ENDPOINT=<user_endpoint>`
-   - `python mcp_pipe.py calculator.py`
+   - `python -m xiaozhi_mcp examples/calculator.py`
 3. 返回启用结果和连通性测试建议。
 
 助手（结果模板）：
@@ -193,7 +193,7 @@
 1. 读取用户提供的脚本文件，按单服务模式启动。
 2. 使用当前 `MCP_ENDPOINT` 执行：
    - `export MCP_ENDPOINT=<endpoint>`
-   - `python vendor/mcp-project/mcp_pipe.py weather.py`
+   - `python -m xiaozhi_mcp weather.py`
 3. 返回服务启用结果并提示做首条工具调用测试。
 
 助手（结果模板）：
@@ -208,8 +208,8 @@
 我有 `calculator.py`、`weather.py`、`mail.py` 三个脚本，帮我一起接入到同一个智能体。
 
 助手（执行思路）：
-1. 将三个服务登记到 `vendor/mcp-project/mcp_config.json` 并启用。
-2. 运行 `python vendor/mcp-project/mcp_pipe.py` 启动所有已启用服务。
+1. 将三个服务登记到 `mcp_config.json` 并启用。
+2. 运行 `python -m xiaozhi_mcp` 启动所有已启用服务。
 3. 返回已同步服务列表，提示进行多工具连通性验证。
 
 助手（结果模板）：
@@ -218,17 +218,16 @@
 - key_ids: agent_id=1758836
 - next_step: 依次执行 calculator/weather/mail 三个工具的 smoke test。
 
-## 示例 12：使用内置本地工程快速启用
+## 示例 12：使用本地 SDK 环境快速启用
 
 用户：
-不要再下载 GitHub 了，直接用本地项目帮我把 MCP 接上智能体。
+用 SDK 方式帮我把 MCP 接上智能体，不要再依赖 vendor。
 
 助手（执行思路）：
-1. 使用仓库内置路径 `vendor/mcp-project`，不再执行下载步骤。
-2. 初始化本地环境并安装依赖：
+1. 初始化本地环境并安装 `xiaozhi_mcp` SDK：
    - `bash bin/mcp-local-prepare.sh`
-3. 调用封装脚本快速启动：
-   - `bash bin/mcp-local-enable.sh <MCP_ENDPOINT> vendor/mcp-project/calculator.py`
+2. 调用封装脚本快速启动：
+   - `bash bin/mcp-local-enable.sh <MCP_ENDPOINT> examples/calculator.py`
 
 助手（结果模板）：
 - operation: mcp_enable

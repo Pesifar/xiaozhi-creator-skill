@@ -6,7 +6,7 @@ my_agent.json
 .junie/
 skills-lock.json
 .venv/
-vendor/mcp-project/.venv/
+.mcp-bridge/
 
 # 手机号登录脚本产物（含 token、cookie、验证码图片）
 .xiaozhi-auth/

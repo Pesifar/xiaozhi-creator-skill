@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "local-stdio-calculator": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["examples/calculator.py"]
+    }
+  }
+}

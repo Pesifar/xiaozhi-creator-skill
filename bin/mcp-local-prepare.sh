@@ -2,16 +2,11 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MCP_DIR="$PROJECT_ROOT/vendor/mcp-project"
-MCP_VENV="$MCP_DIR/.venv"
+MCP_VENV="$PROJECT_ROOT/.venv"
 PYTHON_BIN=""
 VENV_PYTHON="$MCP_VENV/bin/python"
 RECREATE_VENV="0"
-
-if [[ ! -d "$MCP_DIR" ]]; then
-  echo "Missing MCP project directory: $MCP_DIR"
-  exit 1
-fi
+SDK_URL="git+https://github.com/dairoot/mcp-calculator"
 
 if [[ -x "$VENV_PYTHON" ]]; then
   venv_ver="$("$VENV_PYTHON" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
@@ -20,7 +15,7 @@ if [[ -x "$VENV_PYTHON" ]]; then
   if [[ "$venv_major" -gt 3 || ( "$venv_major" -eq 3 && "$venv_minor" -ge 10 ) ]]; then
     source "$MCP_VENV/bin/activate"
     python -m pip install --upgrade pip >/dev/null
-    pip install -r "$MCP_DIR/requirements.txt" >/dev/null
+    pip install "$SDK_URL" >/dev/null
     echo "MCP runtime ready: $MCP_VENV (python: existing $venv_ver)"
     exit 0
   fi
@@ -55,6 +50,6 @@ fi
 
 source "$MCP_VENV/bin/activate"
 python -m pip install --upgrade pip >/dev/null
-pip install -r "$MCP_DIR/requirements.txt" >/dev/null
+pip install "$SDK_URL" >/dev/null
 
 echo "MCP runtime ready: $MCP_VENV (python: $PYTHON_BIN)"

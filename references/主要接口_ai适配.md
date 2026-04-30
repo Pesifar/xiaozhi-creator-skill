@@ -324,6 +324,8 @@ GET: /api/user/tts-list
 
 10. 历史对话
 
+1. 获取历史对话列表
+
 GET: /api/chats/list
 
 提交参数
@@ -370,6 +372,49 @@ GET: /api/chats/list
 
 - `startDate` 为必填，建议默认查询近 7 天并允许用户调整日期区间。
 - 列表结果优先展示：`id`、`created_at`、`chat_summary.title`、`msg_count`。
+
+2. 获取会话消息
+
+GET: /api/chats/messages
+
+提交参数
+
+| 字段 | 描述 | 类型 | 必填 |
+| --- | --- | --- | --- |
+| page | 页码 | int | 否 |
+| pageSize | 分页大小 | int | 否 |
+| chatId | 会话ID | int | 否 |
+| startDate | 起始日期 | YYYY-mm-dd | 是 |
+| endDate | 截止日期 | YYYY-mm-dd | 否 |
+
+返回结果
+
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      {
+        "id": xxx,
+        "user_id": xxx,
+        "chat_id": xxx,
+        "role": "user",
+        "content": "你基于什么？",
+        "voice_embedding_id": "xxxxx",
+        "created_at": "2025-08-22T08:58:39.000Z",
+        "name": "unknown_1",
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+        "completion_tokens": 0,
+        "prompt_ms": 0,
+        "total_ms": 0,
+        "completion_ms": 0,
+        "model": "qwen"
+      }
+    ]
+  }
+}
+```
 
 9. 官方 MCP 工具列表
 
@@ -440,6 +485,160 @@ wss://api.xiaozhi.me/mcp/?token=<TOKEN>
 - 控制台获取入口：登录 `xiaozhi.me` 控制台，进入智能体配置页面，右下角点击 `MCP接入点`。
 - 接入点弹窗可查看：接入点状态（在线/未连接）、可用工具列表、接入点地址。
 
+11.1 查询 MCP 接入点状态与工具列表
+
+GET: `/mcp/endpoints/list?endpoint_ids=agent_1779563,agent_1779564`
+
+请求参数
+
+| 字段 | 描述 | 类型 | 必填 |
+| --- | --- | --- | --- |
+| endpoint_ids | MCP 接入点 ID，格式为 `agent_<智能体ID>`。示例中 `1779563` 是智能体 ID；多个接入点 ID 使用英文逗号 `,` 分隔。示例：`agent_1779563,agent_1779564` | string | 是 |
+
+返回参数
+
+```json
+{
+  "endpoints": [
+    {
+      "endpointId": "agent_1779563",
+      "connectionCount": 1,
+      "status": "online",
+      "rpm": 0,
+      "lastRequestTime": null,
+      "totalRequests": 0,
+      "tools": [
+        {
+          "name": "add",
+          "description": "计算两个数相加",
+          "inputSchema": {
+            "properties": {
+              "a": { "title": "A", "type": "number" },
+              "b": { "title": "B", "type": "number" }
+            },
+            "required": ["a", "b"],
+            "title": "addArguments",
+            "type": "object"
+          },
+          "outputSchema": {
+            "properties": {
+              "result": { "title": "Result", "type": "number" }
+            },
+            "required": ["result"],
+            "title": "addOutput",
+            "type": "object"
+          }
+        },
+        {
+          "name": "subtract",
+          "description": "计算两个数相减：a - b",
+          "inputSchema": {
+            "properties": {
+              "a": { "title": "A", "type": "number" },
+              "b": { "title": "B", "type": "number" }
+            },
+            "required": ["a", "b"],
+            "title": "subtractArguments",
+            "type": "object"
+          },
+          "outputSchema": {
+            "properties": {
+              "result": { "title": "Result", "type": "number" }
+            },
+            "required": ["result"],
+            "title": "subtractOutput",
+            "type": "object"
+          }
+        },
+        {
+          "name": "multiply",
+          "description": "计算两个数相乘",
+          "inputSchema": {
+            "properties": {
+              "a": { "title": "A", "type": "number" },
+              "b": { "title": "B", "type": "number" }
+            },
+            "required": ["a", "b"],
+            "title": "multiplyArguments",
+            "type": "object"
+          },
+          "outputSchema": {
+            "properties": {
+              "result": { "title": "Result", "type": "number" }
+            },
+            "required": ["result"],
+            "title": "multiplyOutput",
+            "type": "object"
+          }
+        },
+        {
+          "name": "divide",
+          "description": "计算两个数相除：a / b",
+          "inputSchema": {
+            "properties": {
+              "a": { "title": "A", "type": "number" },
+              "b": { "title": "B", "type": "number" }
+            },
+            "required": ["a", "b"],
+            "title": "divideArguments",
+            "type": "object"
+          },
+          "outputSchema": {
+            "properties": {
+              "result": { "title": "Result", "type": "number" }
+            },
+            "required": ["result"],
+            "title": "divideOutput",
+            "type": "object"
+          }
+        },
+        {
+          "name": "power",
+          "description": "计算 a 的 b 次方",
+          "inputSchema": {
+            "properties": {
+              "a": { "title": "A", "type": "number" },
+              "b": { "title": "B", "type": "number" }
+            },
+            "required": ["a", "b"],
+            "title": "powerArguments",
+            "type": "object"
+          },
+          "outputSchema": {
+            "properties": {
+              "result": { "title": "Result", "type": "number" }
+            },
+            "required": ["result"],
+            "title": "powerOutput",
+            "type": "object"
+          }
+        }
+      ],
+      "brokers": ["broker-3011"]
+    }
+  ]
+}
+```
+
+字段说明
+
+- `endpointId`：MCP 接入点 ID。
+- `agent_1779563`：其中 `1779563` 是智能体 ID，接入点 ID 由 `agent_` 前缀加智能体 ID 组成。
+- `connectionCount`：当前接入点连接数；大于 `0` 通常表示已有 MCP 服务连接。
+- `status`：接入点在线状态。`online` 表示接入点在线，此时通常可以获取到 `tools` 工具列表。
+- `rpm`：每分钟请求数。
+- `lastRequestTime`：最近一次工具请求时间；无请求时为 `null`。
+- `totalRequests`：累计工具请求次数。
+- `tools`：当前在线 MCP 服务暴露的工具列表；每个工具包含 `name`、`description`、`inputSchema`、`outputSchema`。
+- `brokers`：当前承载该接入点连接的 broker 节点列表。
+
+调用示例
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1779563,agent_1779564"
+```
+
 官方使用补充（根据说明文档截图）
 
 1. MCP 工具名与参数名要清晰，尽量避免缩写，并提供注释说明用途和触发场景。
@@ -457,9 +656,10 @@ wss://api.xiaozhi.me/mcp/?token=<TOKEN>
    - 若用户已提供 `mcp_endpoint`，直接使用；否则调用 token 接口拼接 `wss` 地址。
    - 启动桥接进程前，先导出环境变量：
      - `export MCP_ENDPOINT=<your_mcp_endpoint>`
-2. 运行方式（参考内置 `mcp-project`）
-   - 单个 MCP 服务：`python mcp_pipe.py calculator.py`
-   - 按配置运行全部服务：`python mcp_pipe.py`
+2. 运行方式（使用 `xiaozhi_mcp` SDK）
+   - 安装：`pip install git+https://github.com/dairoot/mcp-calculator`
+   - 单个 MCP 服务：`python -m xiaozhi_mcp calculator.py`
+   - 按配置运行全部服务：`python -m xiaozhi_mcp`
 3. 更新（mcp_update）
    - 更新 MCP server 代码后重启桥接进程；优先保持同一个 `MCP_ENDPOINT`。
 4. 刷新 token（mcp_rotate_token）
@@ -503,10 +703,10 @@ POST: `/api/agents/delete`
 1. 单服务接入（mcp_add_service）
    - 用户仅提供 MCP 脚本代码或脚本文件路径（如 `calculator.py`）。
    - 设置接入点：`export MCP_ENDPOINT=<your_mcp_endpoint>`
-   - 启动命令：`python vendor/mcp-project/mcp_pipe.py calculator.py`
+   - 启动命令：`python -m xiaozhi_mcp calculator.py`
 2. 多服务接入（mcp_add_services_batch）
-   - 将多个 MCP 服务写入 `vendor/mcp-project/mcp_config.json`（每个条目包含 `type`、`enabled` 等配置）。
-   - 启动命令：`python vendor/mcp-project/mcp_pipe.py`
+   - 将多个 MCP 服务写入 `mcp_config.json`（每个条目包含 `type`、`enabled` 等配置）。
+   - 启动命令：`python -m xiaozhi_mcp`
 3. 同步到智能体
    - 所有服务通过同一个 `MCP_ENDPOINT` 与目标智能体同步。
    - 新增或更新服务后重启桥接进程即可完成同步。
@@ -514,12 +714,12 @@ POST: `/api/agents/delete`
    - 改脚本：替换脚本文件后重启进程。
    - 改配置：更新 `mcp_config.json` 后重启进程。
 
-本地加速建议（免下载）
+本地加速建议（SDK 方式）
 
-1. 项目已内置示例工程：`vendor/mcp-project`。
+1. 项目使用 `git+https://github.com/dairoot/mcp-calculator` 提供的 `xiaozhi_mcp` SDK。
 2. 首次仅需创建一次环境：
    - `bash bin/mcp-local-prepare.sh`
-   - 虚拟环境会自动创建在 `vendor/mcp-project/.venv`，并安装依赖。
+   - 虚拟环境会自动创建在 `.venv`，并安装 SDK。
    - 会自动选择 `python3.10+`，若系统版本不足会提示安装。
 3. 推荐使用封装脚本：
    - `bash bin/mcp-local-enable.sh <MCP_ENDPOINT> [script_file]`

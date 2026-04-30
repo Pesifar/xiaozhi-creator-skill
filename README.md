@@ -63,18 +63,20 @@ curl -H "Authorization: Bearer $XIAOZHI_TOKEN" https://xiaozhi.me/api/agents
   - `mcp_update`：更新 MCP 服务代码并重启桥接进程
   - `mcp_rotate_token`：刷新 token 并更新接入地址
   - `mcp_reconnect`：连接断开后的快速重连
-- 运行桥接（参考 `mcp-project`）：
+- 安装桥接 SDK：
+  - `pip install git+https://github.com/dairoot/mcp-calculator`
+- 运行桥接：
   - `export MCP_ENDPOINT=<your_mcp_endpoint>`
-  - `python vendor/mcp-project/mcp_pipe.py vendor/mcp-project/calculator.py`（单服务）
-  - `python vendor/mcp-project/mcp_pipe.py`（按配置启动全部服务）
+  - `python -m xiaozhi_mcp examples/calculator.py`（单服务）
+  - `python -m xiaozhi_mcp`（按 `mcp_config.json` 启动全部服务）
 - 脚本/文件即接入：
   - 你只需要提供脚本代码或文件路径（例如 `calculator.py`），即可通过 `mcp_add_service` 启用。
-  - 多服务场景将条目写入 `vendor/mcp-project/mcp_config.json`，通过 `mcp_add_services_batch` 同步到同一智能体。
+  - 多服务场景将条目写入仓库根目录 `mcp_config.json`，通过 `mcp_add_services_batch` 同步到同一智能体。
   - 同一 `MCP_ENDPOINT`（同一智能体）始终只保留一个 bridge 进程，并复用同一个 ws 连接。
   - 后续新增/删除服务只更新配置，不再拉起新的 bridge 进程。
-- 本地快速环境（已内置示例工程）：
-  - 内置目录：`vendor/mcp-project`（无需再从 GitHub 下载）
-  - 自动准备：`bash bin/mcp-local-prepare.sh`（优先复用已有 `vendor/mcp-project/.venv`，否则自动创建并安装依赖）
+- 本地快速环境：
+  - 示例脚本：`examples/calculator.py`
+  - 自动准备：`bash bin/mcp-local-prepare.sh`（优先复用已有 `.venv`，否则自动创建并安装 SDK）
   - Python 版本：脚本会自动选择 `python3.10+`，低版本会给出安装提示
   - 快速启用：`bash bin/mcp-local-enable.sh <MCP_ENDPOINT> [script_file]`
   - 批量启用：`bash bin/mcp-local-batch.sh <MCP_ENDPOINT>`
@@ -91,11 +93,11 @@ xiaozhi-creator-skill/
 │   ├── mcp-local-enable.sh
 │   └── mcp-local-batch.sh
 ├── examples/
+│   ├── calculator.py
 │   └── demo-conversation.md
 ├── references/
 │   └── 主要接口_ai适配.md
-├── vendor/
-│   └── mcp-project/
+├── mcp_config.json
 └── .gitignore
 ```
 

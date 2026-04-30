@@ -2,9 +2,9 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MCP_DIR="$PROJECT_ROOT/vendor/mcp-project"
-MCP_VENV="$MCP_DIR/.venv"
-BRIDGE_DIR="$MCP_DIR/.bridge"
+MCP_VENV="$PROJECT_ROOT/.venv"
+MCP_CONFIG="$PROJECT_ROOT/mcp_config.json"
+BRIDGE_DIR="$PROJECT_ROOT/.mcp-bridge"
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: bash bin/mcp-local-batch.sh <MCP_ENDPOINT>"
@@ -17,6 +17,11 @@ bash "$PROJECT_ROOT/bin/mcp-local-prepare.sh" >/dev/null
 
 source "$MCP_VENV/bin/activate"
 PYTHON_BIN="$MCP_VENV/bin/python"
+
+if [[ ! -f "$MCP_CONFIG" ]]; then
+  echo "MCP config not found: $MCP_CONFIG"
+  exit 1
+fi
 
 mkdir -p "$BRIDGE_DIR"
 ENDPOINT_KEY="$(printf '%s' "$MCP_ENDPOINT" | shasum -a 256 | awk '{print $1}')"
@@ -33,6 +38,7 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 export MCP_ENDPOINT
-nohup "$PYTHON_BIN" "$MCP_DIR/mcp_pipe.py" >"$LOG_FILE" 2>&1 &
+export MCP_CONFIG
+nohup "$PYTHON_BIN" -m xiaozhi_mcp >"$LOG_FILE" 2>&1 &
 echo "$!" > "$PID_FILE"
 echo "MCP bridge started (single process mode). pid=$(cat "$PID_FILE"), log=$LOG_FILE"

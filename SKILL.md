@@ -318,16 +318,18 @@ Use this standard workflow so MCP can be enabled/updated anytime:
 1. **Enable**
    - Input: `agent_id` + optional `mcp_endpoint`.
    - If `mcp_endpoint` missing, call token API and assemble endpoint.
+   - Install bridge SDK when needed:
+     - `pip install git+https://github.com/dairoot/mcp-calculator`
    - Export endpoint and start bridge process:
      - `export MCP_ENDPOINT=<mcp_endpoint>`
-     - `python vendor/mcp-project/mcp_pipe.py vendor/mcp-project/calculator.py` (single server)
-     - or `python vendor/mcp-project/mcp_pipe.py` (all servers from config)
+     - `python -m xiaozhi_mcp examples/calculator.py` (single server)
+     - or `python -m xiaozhi_mcp` (all servers from `mcp_config.json`)
 2. **Update MCP service**
-   - Keep same `MCP_ENDPOINT`, deploy updated server code, restart `mcp_pipe.py`.
+   - Keep same `MCP_ENDPOINT`, deploy updated server code, restart `python -m xiaozhi_mcp`.
    - For zero-downtime style updates, start new process first, then stop old process.
 3. **Reconnect to agent**
    - If connection drops or token expires, regenerate token and rebuild endpoint.
-   - Re-export `MCP_ENDPOINT` and restart local `vendor/mcp-project/mcp_pipe.py`.
+   - Re-export `MCP_ENDPOINT` and restart local SDK bridge.
 4. **Rollback**
    - Restore previous MCP server code version.
    - Restart bridge process with known-good code and current valid endpoint.
@@ -341,13 +343,13 @@ Allow user to onboard MCP by only providing script code or file:
    - Keep script interface compatible with FastMCP stdio server pattern.
    - Start command:
      - `export MCP_ENDPOINT=<mcp_endpoint>`
-     - `python vendor/mcp-project/mcp_pipe.py <script_file>`
+     - `python -m xiaozhi_mcp <script_file>`
 2. **Config mode (multiple services)**
    - Input: multiple script files or remote MCP entries.
-   - Register services in `vendor/mcp-project/mcp_config.json` with `type` and `enabled`.
+   - Register services in `mcp_config.json` with `type` and `enabled`.
    - Start all enabled services:
      - `export MCP_ENDPOINT=<mcp_endpoint>`
-     - `python vendor/mcp-project/mcp_pipe.py`
+     - `python -m xiaozhi_mcp`
 3. **Update from new file/code**
    - Replace target script file or update config entry.
    - Restart bridge process to load latest tool schema.
@@ -357,14 +359,15 @@ Allow user to onboard MCP by only providing script code or file:
    - For same endpoint (same agent), keep exactly one bridge process and one ws connection.
    - Adding or removing services only updates config and keeps that single bridge running.
 
-### 10.3) Local fast environment setup (no GitHub download needed)
+### 10.3) Local fast environment setup
 
-This repository already vendors the MCP sample under `vendor/mcp-project`.
+This repository uses the packaged bridge SDK from `dairoot/mcp-calculator`; do not rely on a vendored bridge implementation.
 
 1. Create python env once:
    - `bash bin/mcp-local-prepare.sh`
-   - Runtime env is managed at `vendor/mcp-project/.venv`.
+   - Runtime env is managed at `.venv`.
    - Script auto-selects `python3.10+` and fails fast with install hint if unavailable.
+   - The script installs `git+https://github.com/dairoot/mcp-calculator`.
 2. Quick run helpers:
    - `bash bin/mcp-local-enable.sh <MCP_ENDPOINT> [script_file]`
    - `bash bin/mcp-local-batch.sh <MCP_ENDPOINT>`
@@ -424,5 +427,5 @@ Use this concise result format:
 
 - API details source: `references/主要接口_ai适配.md`
 - Example dialogs: `examples/demo-conversation.md`
-- Local vendored sample path: `vendor/mcp-project`
+- Local MCP example script: `examples/calculator.py`
 

@@ -2,10 +2,9 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MCP_DIR="$PROJECT_ROOT/vendor/mcp-project"
-MCP_VENV="$MCP_DIR/.venv"
-MCP_CONFIG="$MCP_DIR/mcp_config.json"
-BRIDGE_DIR="$MCP_DIR/.bridge"
+MCP_VENV="$PROJECT_ROOT/.venv"
+MCP_CONFIG="$PROJECT_ROOT/mcp_config.json"
+BRIDGE_DIR="$PROJECT_ROOT/.mcp-bridge"
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: bash bin/mcp-local-enable.sh <MCP_ENDPOINT> [script_file]"
@@ -13,7 +12,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 MCP_ENDPOINT="$1"
-SCRIPT_FILE="${2:-$MCP_DIR/calculator.py}"
+SCRIPT_FILE="${2:-$PROJECT_ROOT/examples/calculator.py}"
 
 if [[ ! -f "$SCRIPT_FILE" ]]; then
   echo "Script file not found: $SCRIPT_FILE"
@@ -64,14 +63,13 @@ restart_bridge() {
   if [[ -f "$PID_FILE" ]]; then
     old_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
     if [[ -n "${old_pid:-}" ]] && kill -0 "$old_pid" 2>/dev/null; then
-      echo "MCP bridge already running with same endpoint. Reusing single ws connection."
-      echo "pid=$old_pid, log=$LOG_FILE"
-      echo "Service was registered to config and will use the same bridge process."
-      return 0
+      echo "Restarting MCP bridge with same endpoint to load latest config."
+      kill "$old_pid" 2>/dev/null || true
     fi
   fi
   export MCP_ENDPOINT
-  nohup "$PYTHON_BIN" "$MCP_DIR/mcp_pipe.py" >"$LOG_FILE" 2>&1 &
+  export MCP_CONFIG
+  nohup "$PYTHON_BIN" -m xiaozhi_mcp >"$LOG_FILE" 2>&1 &
   echo "$!" > "$PID_FILE"
 }
 

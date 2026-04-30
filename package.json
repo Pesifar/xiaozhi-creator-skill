@@ -16,6 +16,6 @@
     "bin/",
     "examples/",
     "references/",
-    "vendor/"
+    "mcp_config.json"
   ]
 }
